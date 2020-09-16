@@ -1,5 +1,6 @@
 import os
 import yaml
+import pandas as pd
 from datetime import datetime
 from datetime import timedelta
 from Utils.utils import Log
@@ -16,7 +17,7 @@ class DataHandler:
         self.mongo_handler = MongoHandler()
 
     def get_search_keywords(self):
-        df = self.mongo_handler.get_search_keywords()
+        df = pd.DataFrame(self.mongo_handler.get_search_keywords())
         search_keywords = df['company'].unique()
         self.log.debug("search keywords count - {0}".format(len(search_keywords)))
 

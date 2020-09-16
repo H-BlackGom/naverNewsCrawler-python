@@ -1,7 +1,8 @@
 NewsCrawler:
   # debug 여부 - log level 결정
   debug: True
-  chromedriver_path: ./Driver/chromedriver
+  chromedriver_path: /usr/local/bin/chromedriver
+#  chromedriver_path: ./Driver/chromedriver
   save_file_path: ./Output
   # Database information for data save or read.
   DB_ip: 192.168.0.12
@@ -9,11 +10,11 @@ NewsCrawler:
   DB_name: Changsung
   collection_name: news_test
   # Periodically set for execution.
-  iterate: False
+  iterate: True
   #  Set whether to enter search keywords (only Changsung)
   #  - In case of False option, search keywords get from DB according to the specified code.
   #  - In case of True option, Keywords field is required, and news is searched by that keyword.
-  is_input_keywords: True
+  is_input_keywords: False
   # In case of is_input_keywords is True option, Write search keywords in list form.
   keywords: [창성, 이형로]
   # Set the range of the publish date of news data to be fetched date.

@@ -24,7 +24,9 @@ class NaverNewsCrawler(Crawler):
         driver_path = CONFIG['chromedriver_path']
 
         options = webdriver.ChromeOptions()
-        options.add_argument('headless')
+        options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
         options.add_argument('window-size=1920x1080')
         options.add_argument("disable-gpu")
         options.add_argument(
@@ -134,11 +136,11 @@ class NaverNewsCrawler(Crawler):
 
                             time.sleep(random.randrange(3, 10))
                     except Exception as e:
-                        self.log.warning(e.__traceback__)
+                        self.log.warning("{0}".format(e))
                         continue
 
                 page_num += 1
-                if page_num > 50:
+                if page_num > 10:
                     break
 
                 if len(self.driver.find_elements_by_class_name('next')) > 0:

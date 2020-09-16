@@ -1,0 +1,9 @@
+version: '3.1'
+
+services:
+  newscollector:
+    image: newsdata:0.1
+    volumes:
+      - /dev/shm:/dev/shm
+#      - ./config.yaml:/Collectors/config.yaml
+    container_name: "newsdatacollector"
