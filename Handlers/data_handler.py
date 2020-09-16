@@ -36,8 +36,9 @@ class DataHandler:
         if not os.path.exists(path):
             os.makedirs(path)
 
-        self.log.debug("save file name - {0}_{1}.csv".format(keyword, size))
-        df.to_csv(path + '/{0}_{1}.csv'.format(keyword, size), sep=',', na_rep='NaN')
+        self.log.debug("save file name - {0}_{1}.xlsx".format(keyword, size))
+        df.to_excel(path + '/{0}_{1}.xlsx'.format(keyword, size))
+        # df.to_csv(path + '/{0}_{1}.csv'.format(), sep=',', na_rep='NaN')
 
     def save_db(self, df):
         self.mongo_handler.add_news_data(df.to_dict('records'))
