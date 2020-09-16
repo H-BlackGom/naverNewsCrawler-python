@@ -150,6 +150,6 @@ class NaverNewsCrawler(Crawler):
                     break
 
             if len(tmp_df) > 0:
-                self.data_handler.save_file(tmp_df, keyword, len(tmp_df))
+                # self.data_handler.save_file(tmp_df, keyword, len(tmp_df))
                 self.data_handler.save_db(tmp_df)
         self.driver.quit()
