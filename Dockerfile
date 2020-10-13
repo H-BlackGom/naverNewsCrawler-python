@@ -1,8 +1,23 @@
 FROM ubuntu:16.04
 
-#### Set ENV
-ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+RUN apt-get update && apt-get install -y \
+    language-pack-ko \
+    fonts-nanum
+
+## 언어 설정
+RUN locale-gen ko_KR.UTF-8
+ENV LANG ko_KR.UTF-8
+ENV LANGUAGE ko_KR.UTF-8
+ENV LC_ALL ko_KR.UTF-8
 ENV PYTHONIOENCODING=UTF-8
+
+# TimeZone 설정
+ENV TZ Asia/Seoul
+RUN echo $TZ > /etc/timezone && \
+    apt-get update && apt-get install -y tzdata && \
+    rm /etc/localtime && \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata
 
 ## update apt-get
 RUN sed -i 's/archive.ubuntu.com/kr.archive.ubuntu.com/g' /etc/apt/sources.list

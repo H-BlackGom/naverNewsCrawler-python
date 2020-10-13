@@ -18,7 +18,8 @@ class DataHandler:
 
     def get_search_keywords(self):
         df = pd.DataFrame(self.mongo_handler.get_search_keywords())
-        search_keywords = df['company'].unique()
+        search_keywords = list(zip(*map(df.get, df[['code', 'company', 'business_code', 'business']])))
+        # search_keywords = df['company'].unique()
         self.log.debug("search keywords count - {0}".format(len(search_keywords)))
 
         return search_keywords
@@ -26,7 +27,7 @@ class DataHandler:
     def get_range_search_date(self):
         now_date = datetime.now()
         e_date = now_date.strftime('%Y.%m.%d.%H.%M')
-        s_date = (now_date - timedelta(hours=1)).strftime('%Y.%m.%d.%H.%M')
+        s_date = (now_date - timedelta(hours=2)).strftime('%Y.%m.%d.%H.%M')
         self.log.debug("start date - {0}, end date - {1}".format(s_date, e_date))
 
         return s_date, e_date

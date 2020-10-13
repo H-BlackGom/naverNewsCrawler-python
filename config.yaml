@@ -1,8 +1,8 @@
 NewsCrawler:
   # debug 여부 - log level 결정
   debug: True
-  chromedriver_path: /usr/local/bin/chromedriver
-#  chromedriver_path: ./Driver/chromedriver
+#  chromedriver_path: /usr/local/bin/chromedriver
+  chromedriver_path: ./Driver/chromedriver
   save_file_path: ./Output
   # Database information for data save or read.
   DB_ip: 192.168.0.12

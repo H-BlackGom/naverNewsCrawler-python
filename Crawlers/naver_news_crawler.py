@@ -3,6 +3,7 @@ import requests
 import random
 import time
 import yaml
+import datetime
 import pandas as pd
 from tqdm import tqdm
 from bs4 import BeautifulSoup
@@ -60,96 +61,122 @@ class NaverNewsCrawler(Crawler):
         self.log.debug("URL according to conditions - {0}".format(url))
         return url
 
-    def _extract_publisher(self, article):
-        publisher = None
-        match = re.search(self.pattern_publisher, article)
-        if match:
-            publisher = match.group()
-
-        if publisher is not None:
-            publisher = publisher.strip()
-            tmp_publisher = publisher.split(" ")
-
-            if len(tmp_publisher) == 1:
-                publisher = tmp_publisher[0].replace("기자", "")
-            elif len(tmp_publisher) == 2:
-                publisher = tmp_publisher[0]
-            elif len(tmp_publisher) == 3:
-                publisher = tmp_publisher[1]
-
-        self.log.debug("publisher - {0}".format(publisher))
-        return publisher
-
-    def _extract_publisher_email(self, article):
-        email = None
-        match = re.search(self.pattern_email, article)
-        if match:
-            email = match.group()
-
-        if email is not None:
-            email = email.strip()
-
-        self.log.debug("publisher email - {0}".format(email))
-        return email
+    # def _extract_publisher(self, article):
+    #     publisher = None
+    #     match = re.search(self.pattern_publisher, article)
+    #     if match:
+    #         publisher = match.group()
+    #
+    #     if publisher is not None:
+    #         publisher = publisher.strip()
+    #         tmp_publisher = publisher.split(" ")
+    #
+    #         if len(tmp_publisher) == 1:
+    #             publisher = tmp_publisher[0].replace("기자", "")
+    #         elif len(tmp_publisher) == 2:
+    #             publisher = tmp_publisher[0]
+    #         elif len(tmp_publisher) == 3:
+    #             publisher = tmp_publisher[1]
+    #
+    #     self.log.debug("publisher - {0}".format(publisher))
+    #     return publisher
+    #
+    # def _extract_publisher_email(self, article):
+    #     email = None
+    #     match = re.search(self.pattern_email, article)
+    #     if match:
+    #         email = match.group()
+    #
+    #     if email is not None:
+    #         email = email.strip()
+    #
+    #     self.log.debug("publisher email - {0}".format(email))
+    #     return email
 
     def execute_crawler(self, keywords, url):
         # ToDo: 기자가 많이 언급될 경우 다른 기자이름에 다른 이메일이 매칭 될 수 있음. 수정 필요
         self.log.debug("search keywords - {0}".format(keywords))
         self.log.debug("target url - {0}".format(url))
 
-        for idx, keyword in tqdm(enumerate(keywords), total=len(keywords)):
+        for idx, (code, keyword, business_code, business) in tqdm(enumerate(keywords), total=len(keywords)):
             page_num = 1
             search_url = url.format(keyword)
             self.log.debug("search URL - {0}".format(search_url))
 
             self.driver.get(search_url)
             tmp_df = pd.DataFrame(
-                columns=['title', 'link', 'press', 'date', 'reporter', 'email', 'article', 'search_keyword']
+                columns=['title', 'link', 'press', 'date', 'reporter', 'email', 'article', 'search_keyword', 'company',
+                         'company_code', 'business_code', 'business']
             )
 
-            while True:
+            while page_num <= 10:
                 html = self.driver.page_source
                 soup = BeautifulSoup(html, 'html.parser')
-
                 for urls in soup.select("._sp_each_url"):
-                    try:
-                        if urls["href"].startswith("https://news.naver.com"):
-                            detail_news_req = requests.get(urls["href"])
-                            detail_news_soup = BeautifulSoup(detail_news_req.content, 'html.parser')
+                    if urls["href"].startswith("https://news.naver.com"):
+                        self.log.debug("Get URL - {0}".format(urls['href']))
+                        self.driver.get(urls["href"])
+                        news_html = self.driver.page_source
+                        news_html_soup = BeautifulSoup(news_html, 'html.parser')
 
-                            title = detail_news_soup.select('h3#articleTitle')[0].text
-                            publish_date = detail_news_soup.select('.t11')[0].get_text()[:11]
-                            _text = detail_news_soup.select('#articleBodyContents')[0].get_text().replace('\n', " ")
-                            article = _text.replace("// function _flash_removeCallback() {}", "")
-                            company = detail_news_soup.select('#footer address')[0].a.get_text()
-                            publisher = self._extract_publisher(article)
-                            email = self._extract_publisher_email(article)
+                        tmp_title = news_html_soup.title(string=True)
+                        tmp_date = news_html_soup.select('.t11')
+                        tmp_article = news_html_soup.select('#articleBodyContents')
+                        tmp_press = news_html_soup.select('#footer address')
 
-                            if publisher is None or email is None:
-                                continue
+                        title = tmp_title[0].replace(" : 네이버 뉴스", "")
+                        if len(tmp_date) == 0:
+                            tmp_date = news_html_soup.select('.article_info')[0].find('em')
+                            p_date = tmp_date.get_text().split(" ")[0]
+                        else:
+                            p_date = tmp_date[0].get_text().split(" ")[0]
+                        p_date = datetime.datetime.strptime(p_date, "%Y.%m.%d.")
+                        if len(tmp_article) == 0:
+                            tmp_article = news_html_soup.select('#articeBody')
+                        article = tmp_article[0].get_text().replace('\n', "").replace('\t', "")
+                        if not tmp_press[0].a:
+                            tmp_press = news_html_soup.select(".article_footer")
+                            press = tmp_press[0].a.get_text().replace("\n", "").replace("\t", "").split(" ")[0]
+                        else:
+                            press = tmp_press[0].a.get_text()
 
-                            tmp_df = tmp_df.append({
-                                'title': title, 'link': urls["href"], 'press': company,
-                                'date': publish_date, 'reporter': publisher, 'email': email,
-                                'article': article, 'search_keyword': keyword
-                            }, ignore_index=True)
+                        email = ""
+                        publisher = ""
+                        publisher_match = re.search(self.pattern_publisher, article)
+                        email_match = re.search(self.pattern_email, article)
+                        if publisher_match and email_match:
+                            tmp_publisher = publisher_match.group()
+                            tmp_publisher = tmp_publisher.strip().split(" ")
 
-                            time.sleep(random.randrange(3, 10))
-                    except Exception as e:
-                        self.log.warning("{0}".format(e))
-                        continue
+                            if len(tmp_publisher) == 1:
+                                publisher = tmp_publisher[0].replace("기자", "")
+                            elif len(tmp_publisher) == 2:
+                                publisher = tmp_publisher[0]
+                            elif len(tmp_publisher) == 3:
+                                publisher = tmp_publisher[1]
+
+                            tmp_email = email_match.group()
+                            email = tmp_email.strip()
+
+                        tmp_df = tmp_df.append({
+                            'title': title, 'link': urls["href"], 'press': press,
+                            'date': p_date, 'reporter': publisher, 'email': email,
+                            'article': article, 'search_keyword': keyword,
+                            'company': keyword, 'company_code': code,
+                            'business_code': business_code, 'business': business
+                        }, ignore_index=True)
+                        self.log.debug("title-{0}, date-{1}, press-{2}, company-{3}".format(title, p_date,
+                                                                                            press, keyword))
+                        time.sleep(random.randrange(3, 10))
 
                 page_num += 1
-                if page_num > 10:
-                    break
-
                 if len(self.driver.find_elements_by_class_name('next')) > 0:
                     element = self.driver.find_element_by_class_name("next")
                     element.click()
                 else:
                     break
 
+            self.log.debug("Save News data cnt - {0}".format(len(tmp_df)))
             if len(tmp_df) > 0:
-                # self.data_handler.save_file(tmp_df, keyword, len(tmp_df))
                 self.data_handler.save_db(tmp_df)
         self.driver.quit()
