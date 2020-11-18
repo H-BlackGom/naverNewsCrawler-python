@@ -40,7 +40,8 @@ df = pd.DataFrame(comapny_infos)
 
 except_company = ['포스코케미칼', '더블유게임즈', '우리금융지주', 'HDC현대산업개발', '애경산업', '셀트리온',
                   '쿠쿠홈시스', 'SK케미칼', 'BGF리테일', '카카오', '오리온', '넷마블', '현대중공업지주', '두산밥캣',
-                  '삼성바이오로직스', '동서']
+                  '삼성바이오로직스', '동서', '화승엔터프라이즈', 'LIG넥스원', '이노션', '삼성물산', '삼성에스디에스',
+                  '만도', 'BGF']
 company_info = list(zip(*map(df.get, df[['code', 'company', 'business_code', 'business']])))
 print(comapny_infos)
 
@@ -125,5 +126,6 @@ for idx, (code, company, business_code, business) in tqdm(enumerate(company_info
             break
 
     if len(tmp_df) > 0:
-        save_collection.insert_many(tmp_df.to_dict('records'))
+        # tmp_df csv code........
+        # save_collection.insert_many(tmp_df.to_dict('records'))
 driver.quit()
