@@ -10,11 +10,11 @@ NewsCrawler:
   DB_name: Changsung
   collection_name: news_test
   # Periodically set for execution.
-  iterate: True
+  iterate: True # False
   #  Set whether to enter search keywords (only Changsung)
   #  - In case of False option, search keywords get from DB according to the specified code.
   #  - In case of True option, Keywords field is required, and news is searched by that keyword.
-  is_input_keywords: False
+  is_input_keywords: False # True
   # In case of is_input_keywords is True option, Write search keywords in list form.
   keywords: [창성, 이형로]
   # Set the range of the publish date of news data to be fetched date.

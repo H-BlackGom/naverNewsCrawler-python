@@ -5,6 +5,7 @@ import time
 import yaml
 import datetime
 import pandas as pd
+from konlpy.tag import Mecab
 from tqdm import tqdm
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -19,6 +20,7 @@ class NaverNewsCrawler(Crawler):
     def __init__(self, data_handler):
         super(NaverNewsCrawler, self).__init__(NaverNewsCrawler)
 
+        self.mecab = Mecab()
         self.data_handler = data_handler
         self.pattern_publisher = r"\s?[가-힣\s]{3,}기자"
         self.pattern_email = r"([\w-]+)@([\w\.-]+)(\.[\w\.]+)"
@@ -112,7 +114,7 @@ class NaverNewsCrawler(Crawler):
             while page_num <= 10:
                 html = self.driver.page_source
                 soup = BeautifulSoup(html, 'html.parser')
-                for urls in soup.select("._sp_each_url"):
+                for urls in soup.select("a.info"):
                     if urls["href"].startswith("https://news.naver.com"):
                         self.log.debug("Get URL - {0}".format(urls['href']))
                         self.driver.get(urls["href"])
@@ -158,16 +160,22 @@ class NaverNewsCrawler(Crawler):
                             tmp_email = email_match.group()
                             email = tmp_email.strip()
 
+                        tokens = self.mecab.pos(str(article))
+                        nouns_tokens = [word for word, tag in tokens if tag == 'NNG' or tag == 'NNP']
+                        tokens_str = ' '.join(nouns_tokens)
+
                         tmp_df = tmp_df.append({
                             'title': title, 'link': urls["href"], 'press': press,
                             'date': p_date, 'reporter': publisher, 'email': email,
                             'article': article, 'search_keyword': keyword,
                             'company': keyword, 'company_code': code,
-                            'business_code': business_code, 'business': business
+                            'business_code': business_code, 'business': business,
+                            'tokens_split': nouns_tokens, 'tokens': tokens_str
                         }, ignore_index=True)
                         self.log.debug("title-{0}, date-{1}, press-{2}, company-{3}".format(title, p_date,
                                                                                             press, keyword))
                         time.sleep(random.randrange(3, 10))
+                        self.driver.back()
 
                 page_num += 1
                 if len(self.driver.find_elements_by_class_name('next')) > 0:
